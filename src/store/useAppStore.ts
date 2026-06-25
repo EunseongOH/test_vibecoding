@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Platform } from 'react-native';
 import { supabase, isDemoMode } from '../services/supabase';
 import { Profile, Expense, Challenge, UserChallenge, SwipeStatus } from '../types';
 import { DEFAULT_CHALLENGES } from '../constants/challenges';
@@ -18,6 +19,7 @@ interface AppState {
   fetchProfile: () => Promise<void>;
   updateProfileNickname: (nickname: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, nickname: string) => Promise<void>;
   signOut: () => Promise<void>;
   
@@ -198,6 +200,81 @@ export const useAppStore = create<AppState>((set, get) => ({
       await get().fetchExpenses();
       await get().fetchChallenges();
       await get().fetchUserChallenges();
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  signInWithGoogle: async () => {
+    set({ isLoading: true });
+    if (isDemoMode) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const mockSession = { user: { id: 'demo-user', email: 'google-demo@swifin.com' } };
+      set({ 
+        session: mockSession,
+        profile: {
+          id: 'demo-user',
+          email: 'google-demo@swifin.com',
+          nickname: '구글다람쥐',
+          persona_type: 'none',
+          created_at: new Date().toISOString(),
+        },
+        isLoading: false
+      });
+      return;
+    }
+
+    try {
+      if (Platform.OS === 'web') {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+      } else {
+        const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+        
+        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+        const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+
+        const isWebIdValid = webClientId && !webClientId.includes('your-google-web-client-id');
+        const isIosIdValid = iosClientId && !iosClientId.includes('your-google-ios-client-id');
+
+        if (!isWebIdValid) {
+          throw new Error('Google OAuth Web Client ID가 설정되지 않았습니다. .env 파일을 확인해 주세요.');
+        }
+
+        GoogleSignin.configure({
+          webClientId: webClientId,
+          iosClientId: isIosIdValid ? iosClientId : undefined,
+          offlineAccess: true,
+        });
+
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+        const userInfo = await GoogleSignin.signIn();
+        const idToken = userInfo.data?.idToken;
+
+        if (!idToken) {
+          throw new Error('Google 로그인 실패: ID Token이 반환되지 않았습니다.');
+        }
+
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+
+        if (error) throw error;
+        set({ session: data.session });
+        await get().fetchProfile();
+        await get().fetchExpenses();
+        await get().fetchChallenges();
+        await get().fetchUserChallenges();
+      }
     } catch (err) {
       set({ isLoading: false });
       throw err;

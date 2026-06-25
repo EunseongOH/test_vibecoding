@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { Wallet } from 'lucide-react-native';
@@ -7,7 +7,7 @@ import { Wallet } from 'lucide-react-native';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, isLoading } = useAppStore();
+  const { signIn, signInWithGoogle, isLoading } = useAppStore();
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -20,6 +20,14 @@ export default function Login() {
       await signIn(email, password);
     } catch (error: any) {
       Alert.alert('로그인 실패', error.message || '이메일 혹은 비밀번호를 확인해주세요.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      Alert.alert('로그인 실패', error.message || 'Google 로그인 중 오류가 발생했습니다.');
     }
   };
 
@@ -74,7 +82,29 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
-        <View className="flex-row justify-center items-center mt-2">
+        {/* Divider */}
+        <View className="flex-row items-center my-3.5">
+          <View className="flex-1 h-[1px] bg-gray-150" />
+          <Text className="text-gray-400 text-[10px] font-bold mx-3">또는</Text>
+          <View className="flex-1 h-[1px] bg-gray-150" />
+        </View>
+
+        {/* Google Login Button */}
+        <TouchableOpacity
+          onPress={handleGoogleLogin}
+          disabled={isLoading}
+          activeOpacity={0.85}
+          className="w-full bg-white border border-gray-200 py-3.5 rounded-2xl flex-row justify-center items-center shadow-sm mb-4"
+        >
+          <Image 
+            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.png' }} 
+            className="w-4 h-4 mr-2"
+            resizeMode="contain"
+          />
+          <Text className="text-gray-700 font-bold text-sm">Google로 계속하기</Text>
+        </TouchableOpacity>
+
+        <View className="flex-row justify-center items-center mt-1">
           <Text className="text-gray-450 text-xs">아직 회원이 아니신가요? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
             <Text className="text-primary-500 font-bold text-xs underline">회원가입</Text>
