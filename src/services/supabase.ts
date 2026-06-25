@@ -51,7 +51,7 @@ export const supabase = createClient(
       storage: ssrSafeStorage,
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false,
+      detectSessionInUrl: true,
     },
   }
 );
