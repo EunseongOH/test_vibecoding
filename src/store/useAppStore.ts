@@ -115,6 +115,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     
     // Auth Listener setup
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("SWIFIN AUTH LISTENER EVENT:", { event, sessionExists: !!session });
       set({ session });
       if (session) {
         await get().fetchProfile();
@@ -140,6 +141,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           set({ profile: null, expenses: [], userChallenges: [] });
         }
       }
+
+      // Ensure initialized state is marked completed after receiving first session callback
+      if (!get().isInitialized) {
+        set({ isInitialized: true, isLoading: false });
+      }
     });
 
     if (isDemoMode) {
@@ -159,14 +165,21 @@ export const useAppStore = create<AppState>((set, get) => ({
         isLoading: false,
       });
     } else {
+      // If URL has access token hash (Google OAuth callback), wait briefly for Supabase to finish parsing it
+      const hasHashToken = typeof window !== 'undefined' && window.location.hash.includes('access_token');
+      if (hasHashToken) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
-      set({ session, isInitialized: true, isLoading: false });
+      set({ session });
       if (session) {
         await get().fetchProfile();
         await get().fetchExpenses();
         await get().fetchChallenges();
         await get().fetchUserChallenges();
       }
+      set({ isInitialized: true, isLoading: false });
     }
   },
 

@@ -21,6 +21,15 @@ export default function RootLayout() {
     const inTabsGroup = segments[0] === '(tabs)';
     const isOnboarding = segments[0] === 'onboarding';
     
+    console.log("SWIFIN NAVIGATION LOG:", {
+      isInitialized,
+      sessionExists: !!session,
+      segments,
+      inAuthGroup,
+      inTabsGroup,
+      isOnboarding
+    });
+
     // Auth redirection logic
     if (!session && !inAuthGroup && !isOnboarding) {
       router.replace('/onboarding');
