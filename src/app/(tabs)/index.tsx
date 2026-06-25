@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import SwipeCard from '../../components/SwipeCard';
@@ -14,9 +14,10 @@ const REGRET_REASONS = [
 ];
 
 export default function DiaryScreen() {
-  const { expenses, updateExpenseSwipe, profile } = useAppStore();
+  const { expenses, updateExpenseSwipe, profile, signOut } = useAppStore();
   const router = useRouter();
 
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const pendingExpenses = expenses.filter((e) => e.swipe_status === 'pending');
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -33,6 +34,15 @@ export default function DiaryScreen() {
     setSelectedTag('');
     setCustomReason('');
     setModalVisible(true);
+  };
+
+  const handleSignOut = async () => {
+    setShowProfileMenu(false);
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
   };
 
   const submitRegretReason = () => {
@@ -59,18 +69,86 @@ export default function DiaryScreen() {
       <View className="flex-1 px-5 py-4 justify-between">
         
         {/* Header - SWIFIN UX Writing Rules */}
-        <View className="flex-row justify-between items-center mb-3">
+        <View className="flex-row justify-between items-center mb-3 relative z-30">
           <View>
             <Text className="text-[9px] font-bold text-primary-500 tracking-wider">SWIFIN DIARY</Text>
             <Text className="text-base font-black text-gray-800 mt-0.5">
               이 소비는 어땠나요?
             </Text>
           </View>
-          <View className="bg-white px-2.5 py-1 rounded-full flex-row items-center border border-gray-100 shadow-sm">
-            <BookOpen size={10} color="#2cba85" className="mr-1" />
-            <Text className="text-[9px] font-black text-primary-600">
-              돌아볼 카드 {pendingExpenses.length}장
-            </Text>
+          
+          <View className="flex-row items-center space-x-2">
+            <View className="bg-white px-2.5 py-1 rounded-full flex-row items-center border border-gray-100 shadow-sm">
+              <BookOpen size={10} color="#2cba85" className="mr-1" />
+              <Text className="text-[9px] font-black text-primary-600">
+                돌아볼 카드 {pendingExpenses.length}장
+              </Text>
+            </View>
+
+            {/* Profile Avatar Menu */}
+            <View className="relative">
+              <TouchableOpacity
+                onPress={() => setShowProfileMenu(!showProfileMenu)}
+                activeOpacity={0.8}
+                className="w-8 h-8 rounded-full bg-primary-50 border border-primary-100 items-center justify-center shadow-sm"
+              >
+                <Text className="text-sm">
+                  {profile?.persona_type === 'squirrel' ? '🐿️' :
+                   profile?.persona_type === 'tiger' ? '🐯' :
+                   profile?.persona_type === 'fairy' ? '🧚' :
+                   profile?.persona_type === 'scrooge' ? '🪙' : '👤'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Popover Dropdown Menu */}
+              {showProfileMenu && (
+                <View 
+                  style={{
+                    position: 'absolute',
+                    top: 36,
+                    right: 0,
+                    width: 160,
+                    backgroundColor: '#FFFFFF',
+                    borderWidth: 1,
+                    borderColor: '#f3f4f6',
+                    borderRadius: 16,
+                    padding: 12,
+                    zIndex: 99,
+                    ...Platform.select({
+                      ios: {
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                      },
+                      android: {
+                        elevation: 6,
+                      },
+                      web: {
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      } as any,
+                    }),
+                  }}
+                >
+                  <Text className="text-[10px] font-black text-gray-700" numberOfLines={1}>
+                    {profile?.nickname || '회원'}님
+                  </Text>
+                  <Text className="text-[8px] text-gray-400 mt-0.5 mb-2.5" numberOfLines={1}>
+                    {profile?.email || ''}
+                  </Text>
+                  
+                  <View className="h-[1px] bg-gray-100 mb-2" />
+                  
+                  <TouchableOpacity
+                    onPress={handleSignOut}
+                    activeOpacity={0.7}
+                    className="bg-gray-50 py-1.5 rounded-lg items-center active:bg-gray-100"
+                  >
+                    <Text className="text-[10px] font-bold text-rose-500">로그아웃</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
