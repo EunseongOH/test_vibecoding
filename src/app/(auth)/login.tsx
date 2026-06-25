@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { Wallet } from 'lucide-react-native';
@@ -89,19 +89,51 @@ export default function Login() {
           <View className="flex-1 h-[1px] bg-gray-150" />
         </View>
 
-        {/* Google Login Button */}
+        {/* Google GSI Material Button (Guidelines Compliant) */}
         <TouchableOpacity
           onPress={handleGoogleLogin}
           disabled={isLoading}
           activeOpacity={0.85}
-          className="w-full bg-white border border-gray-200 py-3.5 rounded-2xl flex-row justify-center items-center shadow-sm mb-4"
+          style={{
+            height: 40,
+            backgroundColor: '#FFFFFF',
+            borderColor: '#747775',
+            borderWidth: 1,
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 1,
+            elevation: 1,
+          }}
+          className="w-full max-w-[400px] self-center mb-4 active:bg-gray-50"
         >
-          <Image 
-            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.png' }} 
-            className="w-4 h-4 mr-2"
-            resizeMode="contain"
-          />
-          <Text className="text-gray-700 font-bold text-sm">Google로 계속하기</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#1f1f1f" size="small" />
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Image 
+                source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.png' }} 
+                style={{ width: 20, height: 20, marginRight: 10 }}
+                resizeMode="contain"
+              />
+              <Text 
+                style={{
+                  color: '#1f1f1f',
+                  fontSize: 14,
+                  fontWeight: '500',
+                  fontFamily: Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' }),
+                  letterSpacing: 0.25,
+                }}
+              >
+                Sign in with Google
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <View className="flex-row justify-center items-center mt-1">
